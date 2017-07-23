@@ -138,6 +138,21 @@ def err (res, ref):
     return min(1, max(1e-16, abs((res-ref)/ref)))
 
 
+def send (cmd, x, y):
+    p = subprocess.Popen(cmd,
+                         stdin=subprocess.PIPE,
+                         stdout=subprocess.PIPE)
+    p.stdin.write("%d\n" % len(x))
+    for i in xrange(len(x)):
+        p.stdin.write ("%.18e %.18e\n" % (x[i], y[i]))
+
+    return float(p.stdout.read())
+
+def output (f,x):
+    out = "%.5e " % x
+    print out,
+    f.write(out)
+
 if __name__ == "__main__":
     import sys
     import subprocess
@@ -159,18 +174,19 @@ if __name__ == "__main__":
         c = c1
         while c < 1e33:
             (x,y,d,C) = genDot (n, c)
-            r  = dot(x,y)
-            r1 = dot1(x,y)
-            r2 = dot2(x,y)
-            r3 = dot3(x,y)
+            output (f, C)
 
-            out = "%.5e %.5e %.5e %.5e %.5e" % (C,
-                                                err(r,d),
-                                                err(r1,d),
-                                                err(r2,d),
-                                                err(r3,d))
-            print out
-            f.write(out+"\n")
+            r = dot(x,y)
+            output (f, err(r,d))
+
+            for test in ["./testCxx", "./testC", "./testF"]:
+                for version in ["std", "comp"]:
+                    r = send ([test, "dot", version], x, y)
+                    output (f, err(r,d))
+
+            print "\n",
+            f.write ("\n")
+
             c *= step
 
     subprocess.call (["gnuplot", "qual.gp"])
