@@ -1,9 +1,15 @@
 OPTS = -Wall -g -mfma -march=native -D EFT_FMA -flto -ffat-lto-objects -Ofast
 
-all: qual
+all: perf qual
 
 qual: testCxx testC testF
 	./qual.py
+
+perf: testCxx testC testF
+	./testCxx perf | tee perfCxx.dat
+	./testC   perf | tee perfC.dat
+	./testF   perf | tee perfF.dat
+	gnuplot perf.gp
 
 testCxx: testCxx.cxx libeft.a
 	g++ $(OPTS) $< -left -L. -o $@

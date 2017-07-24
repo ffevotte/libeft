@@ -16,7 +16,66 @@ program testF
      end if
   end if
 
+  if (arg == "perf") then
+     call checkPerf()
+  end if
+
 contains
+
+  subroutine checkPerf ()
+    implicit none
+    integer :: i, N, Nmax, nops, nloops
+    real*8, allocatable :: x(:), y(:)
+    real*8 :: keep, begin, end, elapsed, elapsed0, flops, flops0
+
+    write(*,1001) "# N          flops_comp   flops_base"
+1001 format (a)
+
+    Nmax = 1e8
+    N = 50
+    do while (N < Nmax)
+       keep = 0
+
+       allocate(x(N))
+       allocate(y(N))
+
+       do i = 1,N
+          x(i) = 0.1 * i
+          y(i) = 0.01 * i * i
+       end do
+
+       nops = 2*N
+       nloops = int(1e9) / nops
+       if (nloops < 1) then
+          nloops = 1
+       end if
+
+       call cpu_time (begin)
+       do i = 1,nloops
+          keep = keep + dot(x,y,N)
+       end do
+       call cpu_time (end)
+       elapsed = end - begin
+       flops = real(nops) * real(nloops) / elapsed
+
+       call cpu_time (begin)
+       do i = 1,nloops
+          keep = keep + dot0(x,y,N)
+       end do
+       call cpu_time (end)
+       elapsed0 = end - begin
+       flops0 = real(nops) * real(nloops) / elapsed0
+
+       write(*,1000) real(N), flops, flops0, keep
+1000   format (e12.6, " ", e12.6, " ", e12.6, " ", e12.6)
+
+       deallocate(x)
+       deallocate(y)
+
+       N = int(N*1.5)
+    end do
+
+  end subroutine checkPerf
 
   subroutine readDot0 ()
     implicit none
