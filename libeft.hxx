@@ -73,7 +73,7 @@ static inline void split(Real a, Real& x, Real& y){
 // ** TwoSum
 
 template <typename Real>
-void twoSum (/* IN  */ const Real &a, const Real &b,
+void fastTwoSum (/* IN  */ const Real &a, const Real &b,
                  /* OUT */ Real &x, Real &e) {
   // Fast2Sum algorithm from
   // T. J. Dekker. "A Floating-Point Technique for Extending the Available Precision". 1971
@@ -88,6 +88,14 @@ void twoSum (/* IN  */ const Real &a, const Real &b,
   x = A + B;
   const Real z = x - A;
   e = B - z;
+}
+
+template <typename Real>
+void twoSum (/* IN  */ const Real &a, const Real &b,
+             /* OUT */ Real &x, Real &e) {
+  x = a + b;
+  const Real z = x - a;
+  e = (a - (x-z)) + (b-z);
 }
 
 
@@ -119,7 +127,7 @@ void twoProdSum (/* IN  */ const Real & a, const Real & b, const Real & c,
                  /* OUT */ Real & x, Real & e) {
   Real ph, pl; EFT::twoProd (a, b, ph, pl);
   Real uh, ul; EFT::twoSum  (c, ph, uh, ul);
-#ifdef EFT_FMA
+#if 0 //def EFT_FMA
   // ErrFmaAppr from
   // S. Boldo, JM. Muller. "Exact and Approximated Error of the FMA". 2011
   x = EFT::fma (a, b, c);
