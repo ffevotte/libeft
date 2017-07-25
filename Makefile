@@ -1,6 +1,8 @@
 OPTS = -Wall -g -mfma -march=native -D EFT_FMA -flto -ffat-lto-objects -Ofast
 
-all: perf qual
+all: libeft.a libeft.mod
+
+check: perf qual
 
 qual: testCxx testC testF
 	./qual.py
