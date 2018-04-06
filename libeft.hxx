@@ -32,6 +32,11 @@
 #include <cmath>
 #include <xmmintrin.h>
 
+
+#ifdef EFT_VERROU
+#include <valgrind/verrou.h>
+#endif // EFT_VERROU
+
 #ifdef EFT_FMA
 #include <immintrin.h>
 #include <fmaintrin.h>
@@ -40,6 +45,22 @@
 namespace EFT {
 
 // * Helper functions
+
+
+// ** Stop/start instrumenting
+
+inline void stopInstr () {
+#ifdef EFT_VERROU
+  VERROU_STOP_INSTRUMENTATION;
+#endif // EFT_VERROU
+}
+
+inline void startInstr () {
+#ifdef EFT_VERROU
+  VERROU_START_INSTRUMENTATION;
+#endif // EFT_VERROU
+}
+
 
 #ifdef EFT_FMA
 // ** Fused Multiply-Add (FMA) using intrinsics
@@ -163,9 +184,11 @@ template <typename Real>
 static inline void split(const Intrinsic<Real>& ia, Intrinsic<Real>& ix, Intrinsic<Real>& iy){
   typedef const Intrinsic<Real> I;
 
+  stopInstr();
   I ic = I(EFT::splitFactor<Real>) * ia;
   ix = ic - (ic-ia);
   iy = ia - ix;
+  startInstr();
 }
 
 

@@ -10,6 +10,8 @@ bindings in C and Fortran90.
 
 ## Usage
 
+### Compiler options
+
 When building a program using LibEFT (especially in C and Fortran90), you
 probably want to enable link-time optimizations in order to give the compiler a
 chance to inline calls to Error-Free Transformations.
@@ -23,11 +25,23 @@ The recommended command-line compiler options for `gcc` are:
 In addition, you should use `-O3` (or `-Ofast`, but beware of the potential
 impact of `-Ofast` on the correctness of floating-point results).
 
+#### Without FMA (older architecture)
+
 The recommended options above make LibEFT use FMA (Fused Multiplication and
 Addition) instructions, as it allows for better performance. If FMA is not
 supported by your hardware or you want to disable it for any reason, remove the
 `-mfma -D EFT_FMA` options from the compiler command-line.
 
+
+#### In conjunction with Verrou
+
+When trying to evaluate FP errors with Monte-Carlo Arithmetic, using a tool like
+[Verrou](https://github.com/edf-hpc/verrou), some care must be taken in order
+that random roundings don't affect compensated algorithms too much (Graillat,
+Jézéquel and Picot, 2018).
+
+Use the `-D EFT_VERROU` command-line switch in order to correctly evaluate FP
+errors in LibEFT with Verrou.
 
 
 ### C++
