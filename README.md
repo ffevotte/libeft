@@ -1,7 +1,8 @@
 # LibEFT
 
 LibEFT is a library implementing Error-Free Transformations (EFTs), meant to be
-used as base building blocks for efficient compensated algorithms.
+used as base building blocks for reliable and efficient compensated algorithms
+on Intel architectures.
 
 It is originally implemented as a header-only C++ library, but also provides
 bindings in C and Fortran90.
@@ -115,6 +116,39 @@ For example, the C wrapper around `EFT::twoSum<float>` is called `twosum_s`.
 
 Files `testC.c` and `testF.f90` can be used as examples of how to implement a
 compensated dot product in C and Fortran90 using LibEFT.
+
+
+## Example: quality and performance of a dot product
+
+File `testCxx.cxx` implements two dot product algorithms: a standard one
+(native) and a compensated one (comp) using LibEFT. It can be used as an example
+of how to use the library.
+
+The quality of the results is shown in the following figure, where the relative
+error of the dot product result (in double precision) is shown as a function of
+the condition number of the problem (following the methodology described in
+Ogita, Rump and Oishi, 2005). We see that this compensated dot product
+implementation approximately reaches the accuracy that would be obtained with the
+quadruple precision implementation of a standard dot product algorithm.
+
+<img src="https://github.com/ffevotte/libeft/raw/gh-pages/qual.svg?raw=true&sanitize=true"
+     style="width:100%"/>
+
+
+The performance reached by this implementation is summarized in the figures
+below, with and without FMA. As expected, the compensated implementation is
+always CPU-bound: its performance does not depend on the size of the
+computation. This is in contrast to the standard implementation, which is
+essentially memory-bound, and whose performance drops for vectors larger than
+10<sup>5</sup> or 10<sup>6</sup> elements.
+
+The performance drop due to compensation thus varies between 15-25 (for small
+vectors) to around 5 (for large vectors). The FMA version is more efficient overall.
+
+<img src="https://github.com/ffevotte/libeft/raw/gh-pages/perf-fma.svg?raw=true&sanitize=true"
+     style="width:50%"/>
+<img src="https://github.com/ffevotte/libeft/raw/gh-pages/perf-nofma.svg?raw=true&sanitize=true"
+     style="width:50%"/>
 
 
 ## Contributing

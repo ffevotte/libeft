@@ -15,6 +15,8 @@ set style line 6 lw 3 lc rgb '#e31a1c'
 set lmargin at screen 0.12
 set multiplot
 
+set key bottom left at 50,8e8 Left reverse
+
 set size   1,0.6
 set origin 0,0.4
 
@@ -25,15 +27,17 @@ set ylabel "FLOP/s"
 set ytics format "10^{%T}"
 set xtics format ""
 
-plot "perfCxx.dat" u 1:3 w l ls 1 title "C++, natif", \
+plot "perfCxx.dat" u 1:3 w l ls 1 title "C++, native", \
      ""            u 1:2 w l ls 2 title "C++, comp", \
-     "perfC.dat"   u 1:3 w l ls 3 title "C, natif",\
+     "perfC.dat"   u 1:3 w l ls 3 title "C, native",\
      ""            u 1:2 w l ls 4 title "C, comp", \
-     "perfF.dat"   u 1:3 w l ls 5 title "F90, natif", \
+     "perfF.dat"   u 1:3 w l ls 5 title "F90, native", \
      ""            u 1:2 w l ls 6 title "F90, comp"
 
 set size   1,0.4
 set origin 0,0
+
+set key top right at 5e7,18
 
 unset title
 unset logscale y

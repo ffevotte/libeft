@@ -28,7 +28,7 @@ libeft.a: libeft.o
 libeft.mod: libeft_f.f90
 	gfortran $(OPTS) -c $<
 
-%.o: %.cxx
+%.o: %.cxx libeft.hxx
 	g++ $(OPTS) -c $<
 
 clean:

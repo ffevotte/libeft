@@ -30,6 +30,7 @@
 
 #include <functional>
 #include <cmath>
+#include <xmmintrin.h>
 
 #ifdef EFT_FMA
 #include <immintrin.h>
@@ -38,16 +39,13 @@
 
 namespace EFT {
 
-#pragma GCC push_options
-#pragma GCC optimize ("O3")
-
 // * Helper functions
 
 #ifdef EFT_FMA
-// ** Fused Multiply-Add (FMA)
+// ** Fused Multiply-Add (FMA) using intrinsics
 
 // return a * b + c
-double fma (const double& a, const double& b, const double& c){
+inline double fma (const double& a, const double& b, const double& c){
   double d;
   __m128d ai, bi,ci,di;
   ai = _mm_load_sd(&a);
@@ -58,7 +56,7 @@ double fma (const double& a, const double& b, const double& c){
   return d;
 }
 
-float fma (const float& a, const float& b, const float& c){
+inline float fma (const float& a, const float& b, const float& c){
   float d;
   __m128 ai, bi,ci,di;
   ai = _mm_load_ss(&a);
@@ -69,6 +67,82 @@ float fma (const float& a, const float& b, const float& c){
   return d;
 }
 #endif // EFT_FMA
+
+// ** Data types for standard arithmetic operations using intrinsics
+// this prevents harmful compiler optimizations where needed
+
+template <typename Real>
+class Intrinsic {};
+
+template <>
+class Intrinsic<double> {
+public:
+  Intrinsic (const double &x)
+    : _reg (_mm_load_sd(&x))
+  {}
+
+  Intrinsic (__m128d reg)
+    : _reg (reg)
+  {}
+
+  Intrinsic ()
+    : _reg()
+  {}
+
+  Intrinsic operator- (const Intrinsic& y) const {
+    return _mm_sub_sd(_reg, y._reg);
+  }
+
+  Intrinsic operator+ (const Intrinsic& y) const {
+    return _mm_add_sd(_reg, y._reg);
+  }
+
+  Intrinsic operator* (const Intrinsic& y) const {
+    return _mm_mul_sd(_reg, y._reg);
+  }
+
+  double val () const {
+    return _mm_cvtsd_f64 (_reg);
+  }
+
+private:
+  __m128d _reg;
+};
+
+template <>
+class Intrinsic<float> {
+public:
+  Intrinsic (const float &x)
+    : _reg (_mm_load_ss(&x))
+  {}
+
+  Intrinsic (__m128 reg)
+    : _reg (reg)
+  {}
+
+  Intrinsic ()
+    : _reg()
+  {}
+
+  Intrinsic operator- (const Intrinsic& y) const {
+    return _mm_sub_ss(_reg, y._reg);
+  }
+
+  Intrinsic operator+ (const Intrinsic& y) const {
+    return _mm_add_ss(_reg, y._reg);
+  }
+
+  Intrinsic operator* (const Intrinsic& y) const {
+    return _mm_mul_ss(_reg, y._reg);
+  }
+
+  float val () const {
+    return _mm_cvtss_f32 (_reg);
+  }
+
+private:
+  __m128 _reg;
+};
 
 
 // ** Split
@@ -86,10 +160,12 @@ template<> constexpr const float splitFactor<float> = 4097;
 // x = hi(a)
 // y = lo(a)
 template <typename Real>
-static inline void split(Real a, Real& x, Real& y){
-  const Real c = EFT::splitFactor<Real> * a;
-  x = c - (c-a);
-  y = a - x;
+static inline void split(const Intrinsic<Real>& ia, Intrinsic<Real>& ix, Intrinsic<Real>& iy){
+  typedef const Intrinsic<Real> I;
+
+  I ic = I(EFT::splitFactor<Real>) * ia;
+  ix = ic - (ic-ia);
+  iy = ia - ix;
 }
 
 
@@ -112,17 +188,30 @@ void fastTwoSum (/* IN  */ const Real &a, const Real &b,
     A = b;
     B = a;
   }
-  x = A + B;
-  const Real z = x - A;
-  e = B - z;
+
+  typedef const Intrinsic<Real> I;
+  I iA(A), iB(B);
+
+  I ix = iA + iB;
+  I iz = ix - iA;
+  I ie = iB - iz;
+
+  x = ix.val();
+  e = ie.val();
 }
 
 template <typename Real>
 void twoSum (/* IN  */ const Real &a, const Real &b,
              /* OUT */ Real &x, Real &e) {
-  x = a + b;
-  const Real z = x - a;
-  e = (a - (x-z)) + (b-z);
+  typedef const Intrinsic<Real> I;
+  I ia(a), ib(b);
+
+  I ix = ia + ib;
+  I iz = ix - ia;
+  I ie = (ia - (ix-iz)) + (ib-iz);
+
+  x = ix.val();
+  e = ie.val();
 }
 
 
@@ -134,14 +223,23 @@ template <typename Real>
 void twoProd (/* IN  */ const Real &a, const Real &b,
               /* OUT */ Real &x, Real &e) {
   x = a * b;
+
 #ifdef EFT_FMA
+
   e = EFT::fma(a, b, -x);
+
 #else
-  Real a1,a2;
-  Real b1,b2;
-  EFT::split<Real> (a, a1, a2);
-  EFT::split<Real> (b, b1, b2);
-  e = ((a1*b1-x) + a1*b2 + a2*b1) + a2*b2;
+
+  typedef Intrinsic<Real> I;
+  const I ia(a), ib(b), ix(x);
+  I ia1, ia2, ib1, ib2;
+  EFT::split<Real> (ia, ia1, ia2);
+  EFT::split<Real> (ib, ib1, ib2);
+
+  I itmp = (ia1*ib1-ix) + ia1*ib2 + ia2*ib1;
+  const Real a2(ia2.val()), b2(ib2.val());
+  e = itmp.val() + a2*b2;
+
 #endif
 }
 
@@ -158,14 +256,16 @@ void twoProdSum (/* IN  */ const Real & a, const Real & b, const Real & c,
   // ErrFmaAppr from
   // S. Boldo, JM. Muller. "Exact and Approximated Error of the FMA". 2011
   x = EFT::fma (a, b, c);
-  e = (uh-x) + (pl+ul);
+
+  typedef const Intrinsic<Real> I;
+  I ix(x), iuh(uh), iul(ul), ipl(pl);
+  I ie = (iuh-ix) + (ipl+iul);
+  e = ie.val();
 #else
   x = uh;
   e = pl + ul;
 #endif // EFT_FMA
 }
-
-#pragma GCC pop_options
 }
 
 #endif // ndef HXX_LIBEFT
