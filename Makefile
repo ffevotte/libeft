@@ -1,6 +1,6 @@
-OPTS = -Wall -g -mfma -march=native -D EFT_FMA -flto -ffat-lto-objects -Ofast -std=c++11
+OPTS = -Wall -g -mfma -march=native -D EFT_FMA -flto -ffat-lto-objects -Ofast
 
-all: libeft.a libeft.mod
+all: libeft.o
 
 check: perf qual
 
