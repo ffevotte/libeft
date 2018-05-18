@@ -1,4 +1,4 @@
-OPTS = -Wall -g -mfma -march=native -D EFT_FMA -flto -ffat-lto-objects -Ofast
+OPTS = -Wall -g -mfma -march=native -D EFT_FMA -flto -ffat-lto-objects -Ofast -std=c++11
 
 all: libeft.a libeft.mod
 
