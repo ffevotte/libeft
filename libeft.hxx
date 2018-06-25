@@ -245,25 +245,27 @@ void twoSum (/* IN  */ const Real &a, const Real &b,
 template <typename Real>
 void twoProd (/* IN  */ const Real &a, const Real &b,
               /* OUT */ Real &x, Real &e) {
-  x = a * b;
+  const Real c = a * b;
 
 #ifdef EFT_FMA
 
-  e = EFT::fma(a, b, -x);
+  e = EFT::fma(a, b, -c);
 
 #else
 
   typedef Intrinsic<Real> I;
-  const I ia(a), ib(b), ix(x);
+  const I ia(a), ib(b), ic(c);
   I ia1, ia2, ib1, ib2;
   EFT::split<Real> (ia, ia1, ia2);
   EFT::split<Real> (ib, ib1, ib2);
 
-  I itmp = (ia1*ib1-ix) + ia1*ib2 + ia2*ib1;
+  I itmp = (ia1*ib1-ic) + ia1*ib2 + ia2*ib1;
   const Real a2(ia2.val()), b2(ib2.val());
   e = itmp.val() + a2*b2;
 
 #endif
+
+  x = c;
 }
 
 
