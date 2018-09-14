@@ -169,13 +169,17 @@ private:
 // ** Split
 
 // Splitting factor used by split
-template<class Real> constexpr const Real splitFactor = 0. / 0.; // NaN
+template<class Real> struct splitFactor {};
 
 // Double precision:  ((2^27)+1), where 27 = sup(53/2)
-template<> constexpr const double splitFactor<double> = 134217729;
+template<> struct splitFactor<double> {
+  enum { value = 134217729 };
+};
 
 // Single precision:  ((2^12)+1), where 12 = 24/2
-template<> constexpr const float splitFactor<float> = 4097;
+template<> struct splitFactor<float> {
+  enum { value = 4097 };
+};
 
 // a = x + y
 // x = hi(a)
@@ -185,7 +189,7 @@ static inline void split(const Intrinsic<Real>& ia, Intrinsic<Real>& ix, Intrins
   typedef const Intrinsic<Real> I;
 
   stopInstr();
-  I ic = I(EFT::splitFactor<Real>) * ia;
+  I ic = I(EFT::splitFactor<Real>::value) * ia;
   ix = ic - (ic-ia);
   iy = ia - ix;
   startInstr();
