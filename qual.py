@@ -1,4 +1,4 @@
-#!/usr/bin/python -u
+#!/usr/bin/python3 -u
 # -*- coding: utf-8 -*-
 
 # This file is part of LibEFT, an error-free transformations library
@@ -42,7 +42,7 @@ def dot (x, y, f=lambda x: x):
     rational numbers.
     """
     acc = f(0)
-    for i in xrange(len(x)):
+    for i in range(len(x)):
         acc += f(x[i]) * f(y[i])
     return acc
 
@@ -68,10 +68,10 @@ def genDot (n, c):
     n2 = int(n / 2)
     b = math.log(c) / math.log(2)
 
-    e = [random() * b/2 for i in xrange(n2)]
+    e = [random() * b/2 for i in range(n2)]
     e[0]    = b/2 + 1           # Make sure exponents b/2
     e[n2-1] = 0                 # and 0 actually occur
-    for i in xrange(n2):
+    for i in range(n2):
         x[i] = (2*random()-1) * 2**(e[i])
         y[i] = (2*random()-1) * 2**(e[i])
 
@@ -79,7 +79,7 @@ def genDot (n, c):
     # Second half of the vectors such that
     #   (*) log2( dot (x[1:i], y[1:i]) ) decreases from b/2 to 0
     e = linspace (b/2, 0, n-n2)
-    for i in xrange(n-n2):
+    for i in range(n-n2):
         # Random x[i]
         cx = (2*random()-1) * 2**(e[i])
         x[i+n2] = cx
@@ -90,10 +90,10 @@ def genDot (n, c):
 
 
     # Random permutation of x and y
-    perm = range(n); shuffle (perm)
+    perm = [x for x in range(n)]; shuffle (perm)
     X = [0] * n
     Y = [0] * n
-    for i in xrange(n):
+    for i in range(n):
         X[i] = x[perm[i]]
         Y[i] = y[perm[i]]
 
@@ -136,7 +136,7 @@ def twoSum (a, b):
 def dot1 (x,y):
     acc = 0
     accErr = 0
-    for i in xrange(len(x)):
+    for i in range(len(x)):
         acc, e = twoSum (acc, x[i] * y[i])
         accErr += e
     return acc + accErr
@@ -144,7 +144,7 @@ def dot1 (x,y):
 def dot2 (x,y):
     acc = 0
     accErr = 0
-    for i in xrange(len(x)):
+    for i in range(len(x)):
         p, e = twoProd (x[i], y[i])
         acc += p
         accErr += e
@@ -153,7 +153,7 @@ def dot2 (x,y):
 def dot3 (x,y):
     acc = 0
     accErr = 0
-    for i in xrange(len(x)):
+    for i in range(len(x)):
         p, ep = twoProd (x[i], y[i])
         acc, es = twoSum (acc, p)
         accErr += ep + es
@@ -167,15 +167,18 @@ def send (cmd, x, y):
     p = subprocess.Popen(cmd,
                          stdin=subprocess.PIPE,
                          stdout=subprocess.PIPE)
-    p.stdin.write("%d\n" % len(x))
-    for i in xrange(len(x)):
-        p.stdin.write ("%.18e %.18e\n" % (x[i], y[i]))
 
-    return float(p.stdout.read())
+    data=""
+    data+=("%d\n" % len(x))
+    for i in range(len(x)):
+        data+=("%.18e %.18e\n" % (x[i], y[i]))
+    stdout,stderr=p.communicate(data.encode("ascii"))
+    res=float(stdout.decode())
+    return res
 
 def output (f,x):
     out = "%.5e " % x
-    print out,
+    print(out)
     f.write(out)
 
 if __name__ == "__main__":
@@ -209,7 +212,7 @@ if __name__ == "__main__":
                     r = send ([test, "dot", version], x, y)
                     output (f, err(r,d))
 
-            print "\n",
+            print("\n")
             f.write ("\n")
 
             c *= step
